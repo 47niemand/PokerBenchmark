@@ -1,0 +1,19 @@
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+/.idea
+/out
+/target
+
+### Gradle ###
+.gradle
+build/
+
+### Gradle Patch ###
+**/build/
+
+### JetBrains ###
+.idea/
