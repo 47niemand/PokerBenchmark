@@ -3,6 +3,8 @@ package pp.muza.poker;
 import pp.muza.cards.Card;
 import pp.muza.cards.CardStack;
 
+import java.util.ArrayList;
+
 // Texas hold 'em calculator
 public final class TexasHoldEmCalc implements PokerCalc {
 
@@ -20,37 +22,44 @@ public final class TexasHoldEmCalc implements PokerCalc {
         this.hand = hand;
     }
 
-    public static PokerCalc getResult(final CardStack sourceStack, final int tag) {
+    /**
+     * Calculates the result for a given poker hand
+     *
+     * @param hand - it's a list which contains two hole cards for index 0 to 1, rest is community cards
+     * @param tag  player's ID
+     * @return PokerCalc
+     */
+    public static PokerCalc calculateResult(final ArrayList<? extends Card> hand, final int tag) {
         Result res = Result.UNKNOWN;
-        CardStack stack = new CardStack(sourceStack);
+        CardStack handCpy = new CardStack(hand);
         CardStack combination = new CardStack();
 
-        stack.sort(Card::compareScoreByValueDesc);
+        handCpy.sort(Card::compareScoreByValueDesc);
 
-        for (int straightLen = 1, straightIdx = 0, combLen = 0, combIdx = 0, idx = 0; idx < stack.size(); idx++) {
-            Card current = stack.get(idx);
+        for (int straightLen = 1, straightIdx = 0, combLen = 0, combIdx = 0, idx = 0; idx < handCpy.size(); idx++) {
+            Card current = handCpy.get(idx);
 
-            if (current.getValue() == stack.get(combIdx).getValue()) {
+            if (current.getValue() == handCpy.get(combIdx).getValue()) {
                 combLen++;
             } else {
                 combIdx = idx;
                 combLen = 1;
             }
 
-            if (current.getValue() == stack.get(straightIdx).getValue().prev()) {
+            if (current.getValue() == handCpy.get(straightIdx).getValue().prev()) {
                 straightLen++;
                 straightIdx = idx;
-            } else if (current.getValue() != stack.get(straightIdx).getValue()) {
+            } else if (current.getValue() != handCpy.get(straightIdx).getValue()) {
                 straightIdx = idx;
                 straightLen = 1;
             }
 
-            if ((straightLen == 5) && (res.getScore() < TexasHoldEmCalc.Result.STRAIGHT.getScore())) {
-                res = TexasHoldEmCalc.Result.STRAIGHT;
+            if ((straightLen == 5) && (res.getScore() < PokerCalc.Result.STRAIGHT.getScore())) {
+                res = PokerCalc.Result.STRAIGHT;
                 combination.clear();
                 for (int j = idx; j >= 0; j--) {
-                    if (combination.peekLast() != stack.get(j)) {
-                        combination.add(0, stack.get(j));
+                    if (combination.peekLast() != handCpy.get(j)) {
+                        combination.add(0, handCpy.get(j));
                     }
                     if (combination.size() >= 5) {
                         break;
@@ -58,73 +67,73 @@ public final class TexasHoldEmCalc implements PokerCalc {
                 }
                 boolean checkFlush = combination.size() > 1;
                 for (int j = 1; checkFlush && j < combination.size(); j++) {
-                    checkFlush = combination.get(j).getSuit() == stack.get(0).getSuit();
+                    checkFlush = combination.get(j).getSuit() == handCpy.get(0).getSuit();
                 }
                 if (checkFlush) {
-                    res = TexasHoldEmCalc.Result.STRAIGHTFLUSH;
+                    res = PokerCalc.Result.STRAIGHTFLUSH;
                 }
-            } else if ((combLen == 1) && (res == TexasHoldEmCalc.Result.UNKNOWN)) {
-                res = TexasHoldEmCalc.Result.HIGHCARD;
+            } else if ((combLen == 1) && (res == PokerCalc.Result.UNKNOWN)) {
+                res = PokerCalc.Result.HIGHCARD;
                 combination.clear();
                 combination.add(current);
             } else if (combLen == 2) {
-                if (res == TexasHoldEmCalc.Result.HIGHCARD) {
+                if (res == PokerCalc.Result.HIGHCARD) {
                     // A A
-                    res = TexasHoldEmCalc.Result.ONEPAIR;
+                    res = PokerCalc.Result.ONEPAIR;
                     combination.clear();
-                    combination.addAll(stack.subList(idx - 1, idx + 1));
-                } else if (res == TexasHoldEmCalc.Result.ONEPAIR) {
+                    combination.addAll(handCpy.subList(idx - 1, idx + 1));
+                } else if (res == PokerCalc.Result.ONEPAIR) {
                     // AA BB
-                    res = TexasHoldEmCalc.Result.TWOPAIRS;
-                    combination.addAll(stack.subList(idx - 1, idx + 1));
-                } else if (res == TexasHoldEmCalc.Result.THREEOFAKIND) {
+                    res = PokerCalc.Result.TWOPAIRS;
+                    combination.addAll(handCpy.subList(idx - 1, idx + 1));
+                } else if (res == PokerCalc.Result.THREEOFAKIND) {
                     //AAA BB
-                    res = TexasHoldEmCalc.Result.FULLHOUSE;
-                    combination.addAll(stack.subList(idx - 1, idx + 1));
+                    res = PokerCalc.Result.FULLHOUSE;
+                    combination.addAll(handCpy.subList(idx - 1, idx + 1));
                 }
             } else if (combLen == 3) {
-                if (res == TexasHoldEmCalc.Result.ONEPAIR) {
+                if (res == PokerCalc.Result.ONEPAIR) {
                     // AA A
-                    res = TexasHoldEmCalc.Result.THREEOFAKIND;
+                    res = PokerCalc.Result.THREEOFAKIND;
                     combination.clear();
-                    combination.addAll(stack.subList(idx - 2, idx + 1));
-                } else if (res == TexasHoldEmCalc.Result.TWOPAIRS) {
+                    combination.addAll(handCpy.subList(idx - 2, idx + 1));
+                } else if (res == PokerCalc.Result.TWOPAIRS) {
                     // AA BB B
-                    res = TexasHoldEmCalc.Result.FULLHOUSE;
+                    res = PokerCalc.Result.FULLHOUSE;
                     combination.add(current);
                 }
-            } else if (combLen == 4 && res.getScore() < TexasHoldEmCalc.Result.QUADS.getScore()) {
-                res = TexasHoldEmCalc.Result.QUADS;
+            } else if (combLen == 4 && res.getScore() < PokerCalc.Result.QUADS.getScore()) {
+                res = PokerCalc.Result.QUADS;
                 combination.clear();
-                combination.addAll(stack.subList(idx - 3, idx + 1));
+                combination.addAll(handCpy.subList(idx - 3, idx + 1));
             }
         }
 
-        stack.sort(Card::compareScoreBySuitDesc);
+        handCpy.sort(Card::compareScoreBySuitDesc);
 
-        for (int combLen = 0, combIdx = 0, idx = 0; idx < stack.size(); idx++) {
-            Card current = stack.get(idx);
+        for (int combLen = 0, combIdx = 0, idx = 0; idx < handCpy.size(); idx++) {
+            Card current = handCpy.get(idx);
 
-            if (current.getSuit() == stack.get(combIdx).getSuit()) {
+            if (current.getSuit() == handCpy.get(combIdx).getSuit()) {
                 combLen++;
             } else {
                 combIdx = idx;
                 combLen = 1;
             }
 
-            if ((combLen >= 5) && (res.getScore() < TexasHoldEmCalc.Result.FLUSH.getScore())) {
-                res = TexasHoldEmCalc.Result.FLUSH;
+            if ((combLen >= 5) && (res.getScore() < PokerCalc.Result.FLUSH.getScore())) {
+                res = PokerCalc.Result.FLUSH;
                 combination.clear();
-                combination.addAll(stack.subList(idx - 4, idx + 1));
+                combination.addAll(handCpy.subList(idx - 4, idx + 1));
                 break;
             }
         }
 
         final int scoreMultiples = (Card.Value.MAX_SCORE + 1);
-        int kicker = sourceStack.stream().sequential().limit(2).map(x -> x.getValue().getScore()).reduce(0, Integer::sum);
+        int kicker = hand.stream().sequential().limit(2).map(x -> x.getValue().getScore()).reduce(0, Integer::sum);
         int score = res.getScore() * scoreMultiples * scoreMultiples + combination.getFirst().getValue().getScore() * scoreMultiples + kicker;
 
-        return new TexasHoldEmCalc(tag, combination, res, score, new CardStack(sourceStack));
+        return new TexasHoldEmCalc(tag, combination, res, score, new CardStack(hand));
     }
 
     @Override
