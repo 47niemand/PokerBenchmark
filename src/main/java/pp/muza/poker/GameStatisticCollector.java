@@ -64,7 +64,7 @@ public final class GameStatisticCollector implements GameStatistic {
         if (!initialized) {
             throw new IllegalStateException();
         }
-        if (results != null && results.size() > 0) {
+        if (results != null && !results.isEmpty()) {
 
             final int winnerScore = results.stream().map(PokerCalc::getScore).max(Integer::compareTo).orElse(-1);
             List<PokerCalc> winners = results.stream().filter(pokerCalc -> pokerCalc.getScore() == winnerScore).collect(Collectors.toList());
