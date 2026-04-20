@@ -2,14 +2,18 @@ package pp.muza.cards;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+
+import lombok.Getter;
 
 public final class CardStack extends ArrayList<Card> {
 
     public static final int STANDARD_DECK_SIZE = 52;
-    private static final Random RANDOM = new Random();
+
+    @Getter
     private final int maxSize;
 
     public CardStack() {
@@ -25,20 +29,13 @@ public final class CardStack extends ArrayList<Card> {
         this.maxSize = maxSize;
     }
 
-    public int getMaxSize() {
-        return maxSize;
-    }
-
     public static CardStack parseCards(final String str) throws IllegalArgumentException {
         List<Card> t = new ArrayList<>();
-        String[] s = str.split(Card.Suit.HEAD_REGEXP);
-        int i = 0;
-        while (i < s.length) {
-            String s1 = s[i].replaceAll("[,;: ]", "");
-            if (s1.length() > 0) {
+        for (String s : str.split(Card.Suit.HEAD_REGEXP)) {
+            String s1 = s.replaceAll("[,;: ]", "");
+            if (!s1.isEmpty()) {
                 t.add(Card.valueOf(s1));
             }
-            i++;
         }
         return new CardStack(t);
     }
@@ -47,7 +44,7 @@ public final class CardStack extends ArrayList<Card> {
         final CardStack cardStack = new CardStack(STANDARD_DECK_SIZE);
         for (Card.Suit suit : Card.Suit.values()) {
             for (Card.Value value : Card.Value.values()) {
-                cardStack.add(new Card(value, suit));
+                cardStack.add(Card.of(value, suit));
             }
         }
         assert cardStack.size() == cardStack.maxSize;
@@ -106,14 +103,12 @@ public final class CardStack extends ArrayList<Card> {
 
     public void toss() {
         for (int i = size() - 1; i > 0; i--) {
-            exchange(i, RANDOM.nextInt(i + 1));
+            exchange(i, ThreadLocalRandom.current().nextInt(i + 1));
         }
     }
 
     public void exchange(final int index1, final int index2) {
-        Card tmp = get(index1);
-        set(index1, get(index2));
-        set(index2, tmp);
+        Collections.swap(this, index1, index2);
     }
 
     public boolean isFull() {

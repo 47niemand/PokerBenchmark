@@ -1,54 +1,59 @@
 package pp.muza.cards;
 
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+
+@Getter
+@EqualsAndHashCode
 public final class Card {
+
+    private static final Card[] CARD_CACHE;
+
+    static {
+        Value[] values = Value.values();
+        Suit[] suits = Suit.values();
+        CARD_CACHE = new Card[values.length * Suit.COUNT];
+        for (Value value : values) {
+            for (Suit suit : suits) {
+                CARD_CACHE[value.ordinal() * Suit.COUNT + suit.ordinal()] = new Card(value, suit);
+            }
+        }
+    }
+
     private final Value value;
     private final Suit suit;
 
-    public Card(final Value value, final Suit suit) {
+    private Card(final Value value, final Suit suit) {
         this.value = value;
         this.suit = suit;
+    }
+
+    public static Card of(final Value value, final Suit suit) {
+        return CARD_CACHE[value.ordinal() * Suit.COUNT + suit.ordinal()];
     }
 
     public static Card valueOf(final String s) throws IllegalArgumentException {
         String[] t = s.split(Suit.TAIL_REGEXP);
         if (t.length != 2) {
-            throw new IllegalArgumentException(String.format("'%s' is not valid card", s));
+            throw new IllegalArgumentException("Invalid card: '" + s + "'");
         }
-        return new Card(Value.valueOfLabel(t[0].trim()), Suit.valueOfLabel(t[1].trim().charAt(0)));
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
+        try {
+            String suitToken = t[1].trim();
+            if (suitToken.isEmpty()) {
+                throw new IllegalArgumentException("Missing suit");
+            }
+            return of(Value.valueOfLabel(t[0].trim()), Suit.valueOfLabel(suitToken.charAt(0)));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid card '" + s + "': " + e.getMessage(), e);
         }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Card card = (Card) o;
-        return value == card.value && suit == card.suit;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value, suit);
     }
 
     @Override
     public String toString() {
         return String.format("%s%c", value.label, suit.label);
-    }
-
-    public Value getValue() {
-        return value;
-    }
-
-    public Suit getSuit() {
-        return suit;
     }
 
     int scoreValue() {
@@ -99,13 +104,13 @@ public final class Card {
                     return v;
                 }
             }
-            throw new IllegalArgumentException("Invalid card suit");
+            throw new IllegalArgumentException("Invalid suit: '" + label + "'");
         }
     }
 
     public enum Value {
         TWO(2, "2", null),
-        TREE(3, "3", null),
+        THREE(3, "3", null),
         FOUR(4, "4", null),
         FIVE(5, "5", null),
         SIX(6, "6", null),
@@ -121,6 +126,7 @@ public final class Card {
         public static final int MAX_SCORE =
                 Stream.of(Value.values()).map(x -> x.score).max(Integer::compareTo).orElse(0);
         static final Value[] VALUES = values();
+        @Getter
         private final int score;
         private final String label;
         private final String altLabel;
@@ -138,11 +144,7 @@ public final class Card {
                     return v;
                 }
             }
-            throw new IllegalArgumentException("Invalid card value");
-        }
-
-        public int getScore() {
-            return score;
+            throw new IllegalArgumentException("Invalid value: '" + l + "'");
         }
 
         public Value prev() {
