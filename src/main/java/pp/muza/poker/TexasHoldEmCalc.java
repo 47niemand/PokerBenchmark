@@ -25,7 +25,8 @@ public final class TexasHoldEmCalc implements PokerCalc {
      * @param hand - it's a list which contains two hole cards for index 0 to 1,
      *             rest is community cards
      * @param tag  player's ID
-     * @return PokerCalc
+     * @return PokerCalc, which contains the best combination of 5 cards, the result
+     *         type, score for comparison, player ID and original hand
      */
     public static PokerCalc calculateResult(final List<? extends Card> hand, final int tag) {
         CardStack sorted = new CardStack(hand);
@@ -136,12 +137,14 @@ public final class TexasHoldEmCalc implements PokerCalc {
             scoreCards[1] = kickers[0];
             scoreCards[2] = kickers[1];
             scoreCards[3] = kickers[2];
-        } else {
+        } else if (sorted.size() > 0) {
             res = Result.HIGHCARD;
             for (int i = 0; i < 5 && i < sorted.size(); i++) {
                 combination.add(sorted.get(i));
                 scoreCards[i] = sorted.get(i).getValue().getScore();
             }
+        } else {
+            res = Result.UNKNOWN;
         }
 
         final int BASE = Card.Value.MAX_SCORE + 1; // 15
@@ -150,7 +153,8 @@ public final class TexasHoldEmCalc implements PokerCalc {
             score = score * BASE + scoreCards[i];
         }
 
-        return new TexasHoldEmCalc(combination, res, score, tag, new CardStack(hand));
+        return new TexasHoldEmCalc(combination, res, score, tag,
+                hand instanceof CardStack ? (CardStack) hand : new CardStack(hand));
     }
 
     /**
@@ -160,7 +164,8 @@ public final class TexasHoldEmCalc implements PokerCalc {
         int[] kickers = new int[count];
         int found = 0;
         for (Card c : sorted) {
-            if (found >= count) break;
+            if (found >= count)
+                break;
             if (!combination.contains(c)) {
                 kickers[found++] = c.getValue().getScore();
             }

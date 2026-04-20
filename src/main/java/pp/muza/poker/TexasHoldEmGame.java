@@ -93,7 +93,7 @@ public final class TexasHoldEmGame {
         fillHands();
         fillRiver();
         for (int i = 0; i < hands.size(); i++) {
-            CardStack s = new CardStack(HAND_MAX_SIZE + RIVER_MAX_SIZE);
+            CardStack s = new CardStack(HAND_MAX_SIZE + RIVER_MAX_SIZE);            
             s.addAll(hands.get(i));
             s.addAll(river);
             PokerCalc result = TexasHoldEmCalc.calculateResult(s, i);

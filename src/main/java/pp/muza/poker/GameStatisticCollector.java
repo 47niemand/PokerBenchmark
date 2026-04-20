@@ -4,16 +4,18 @@ import pp.muza.cards.Card;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 public final class GameStatisticCollector implements GameStatistic {
 
-    private static final Collection<Card> EMPTY_LIST = new ArrayList<>();
+    private static final Collection<Card> EMPTY_LIST = Collections.emptyList();
 
     private final AtomicLong reportedCount = new AtomicLong();
     private final Map<Integer, Map<PokerCalc.Result, AtomicLong>> playerWinResultStats = new HashMap<>();
@@ -25,88 +27,88 @@ public final class GameStatisticCollector implements GameStatistic {
 
     @Override
     public synchronized void initialize(final int players) {
-        for (Map<PokerCalc.Result, AtomicLong> i : playerWinResultStats.values()) {
-            i.clear();
-        }
         playerWinResultStats.clear();
         resultStats.clear();
         playerWins.clear();
+        playerHand.clear();
+        river = EMPTY_LIST;
+        reportedCount.set(0L);
 
-        for (int i = 0; i < players; i++) {
-            EnumMap<PokerCalc.Result, AtomicLong> playerWinResultItem = new EnumMap<>(PokerCalc.Result.class);
-            playerWinResultStats.put(i, playerWinResultItem);
-            for (PokerCalc.Result r : PokerCalc.Result.values()) {
-                playerWinResultItem.put(r, new AtomicLong());
-            }
-            playerWins.put(i, new AtomicLong());
-            playerHand.put(i, EMPTY_LIST);
-            river = EMPTY_LIST;
-        }
         for (PokerCalc.Result r : PokerCalc.Result.values()) {
             resultStats.put(r, new AtomicLong());
         }
-        reportedCount.set(0L);
+        for (int i = 0; i < players; i++) {
+            Map<PokerCalc.Result, AtomicLong> perResult = new EnumMap<>(PokerCalc.Result.class);
+            for (PokerCalc.Result r : PokerCalc.Result.values()) {
+                perResult.put(r, new AtomicLong());
+            }
+            playerWinResultStats.put(i, perResult);
+            playerWins.put(i, new AtomicLong());
+            playerHand.put(i, EMPTY_LIST);
+        }
         initialized = true;
     }
 
-    private Collection<Card> intersection(final Collection<Card> list1, final Collection<Card> list2) {
-        List<Card> list = new ArrayList<>();
-        for (Card t : list1) {
-            if (list2.contains(t)) {
-                list.add(t);
-            }
+    private static List<Card> intersection(Collection<Card> a, Collection<Card> b) {
+        Set<Card> setB = new HashSet<>(b);
+        List<Card> result = new ArrayList<>();
+        for (Card card : a) {
+            if (setB.contains(card))
+                result.add(card);
         }
-        return list;
+        return result;
     }
 
     @Override
     public void reportStatistics(final List<PokerCalc> results) {
-        if (!initialized) {
-            throw new IllegalStateException();
+        if (!initialized || results == null || results.isEmpty())
+            return;
+
+        // Compute max score outside synchronized block
+        int maxScore = Integer.MIN_VALUE;
+        for (PokerCalc calc : results) {
+            if (calc.getScore() > maxScore)
+                maxScore = calc.getScore();
         }
-        if (results != null && !results.isEmpty()) {
 
-            final int winnerScore = results.stream().map(PokerCalc::getScore).max(Integer::compareTo).orElse(-1);
-            List<PokerCalc> winners = results.stream().filter(pokerCalc -> pokerCalc.getScore() == winnerScore).collect(Collectors.toList());
-            synchronized (this) {
-                for (PokerCalc result : results) {
-                    Collection<Card> hand = playerHand.get(result.getPlayer());
-                    if (hand == EMPTY_LIST) {
-                        playerHand.put(result.getPlayer(),
-                                result.getHand().stream().limit(2).collect(Collectors.toList()));
-                    } else if (hand.size() > 0) {
-                        playerHand.put(result.getPlayer(), intersection(hand,
-                                result.getHand().stream().limit(2).collect(Collectors.toList())));
-                    }
-                }
-                updateRiver(results.get(0).getHand().stream().skip(2).collect(Collectors.toList()));
+        // Extract river cards outside synchronized block (subList is O(1))
+        List<Card> firstHand = results.get(0).getHand();
+        List<Card> newRiver = firstHand.subList(2, firstHand.size());
 
-                reportedCount.incrementAndGet();
-                for (PokerCalc winner : winners) {
-                    playerWinResultStats.get(winner.getPlayer()).get(winner.getResult()).incrementAndGet();
-                    resultStats.get(winner.getResult()).incrementAndGet();
-                    playerWins.get(winner.getPlayer()).incrementAndGet();
+        final int finalMaxScore = maxScore;
+        synchronized (this) {
+            for (PokerCalc result : results) {
+                int player = result.getPlayer();
+                List<Card> holeCards = result.getHand().subList(0, 2);
+
+                // Update tracked hole cards (intersection across all seen games)
+                Collection<Card> current = playerHand.get(player);
+                playerHand.put(player, current == EMPTY_LIST
+                        ? new ArrayList<>(holeCards)
+                        : current.isEmpty() ? current : intersection(current, holeCards));
+
+                // Update win statistics
+                if (result.getScore() == finalMaxScore) {
+                    playerWinResultStats.get(player).get(result.getResult()).incrementAndGet();
+                    resultStats.get(result.getResult()).incrementAndGet();
+                    playerWins.get(player).incrementAndGet();
                 }
             }
-        }
-    }
 
-    private void updateRiver(final List<Card> collect) {
-        if (river == EMPTY_LIST) {
-            river = collect;
-        } else if (river.size() > 0) {
-            river = intersection(river, collect);
+            // Update tracked river cards
+            river = river == EMPTY_LIST ? newRiver : river.isEmpty() ? river : intersection(river, newRiver);
+            reportedCount.incrementAndGet();
         }
     }
 
     @Override
-    public Map<Integer, Collection<Card>> getPlayersHand() {
-        return playerHand;
+    public synchronized Map<Integer, Collection<Card>> getPlayersHand() {
+        return new HashMap<>(playerHand);
     }
 
     @Override
-    public Collection<Card> getRiver() {
-        return river;
+    public synchronized Collection<Card> getRiver() {
+        return new ArrayList<>(river);
     }
 
     @Override
@@ -115,31 +117,27 @@ public final class GameStatisticCollector implements GameStatistic {
     }
 
     @Override
-    public Map<Integer, Map<PokerCalc.Result, Long>> getPlayerResultWinStats() {
+    public synchronized Map<Integer, Map<PokerCalc.Result, Long>> getPlayerResultWinStats() {
         Map<Integer, Map<PokerCalc.Result, Long>> result = new HashMap<>();
-        for (Integer player : playerWinResultStats.keySet()) {
-            Map<PokerCalc.Result, Long> stat = playerWinResultStats.get(player).entrySet()
-                    .stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey,
-                            e -> e.getValue().get()));
-            result.put(player, stat);
-        }
+        playerWinResultStats.forEach((player, stats) -> {
+            Map<PokerCalc.Result, Long> snap = new EnumMap<>(PokerCalc.Result.class);
+            stats.forEach((r, c) -> snap.put(r, c.get()));
+            result.put(player, snap);
+        });
         return result;
     }
 
     @Override
-    public Map<PokerCalc.Result, Long> getResultStats() {
-        return resultStats.entrySet()
-                .stream()
-                .collect(Collectors.toMap(Map.Entry::getKey,
-                        e -> e.getValue().get()));
+    public synchronized Map<PokerCalc.Result, Long> getResultStats() {
+        Map<PokerCalc.Result, Long> result = new EnumMap<>(PokerCalc.Result.class);
+        resultStats.forEach((r, c) -> result.put(r, c.get()));
+        return result;
     }
 
     @Override
-    public Map<Integer, Long> getPlayerWinStats() {
-        return playerWins.entrySet()
-                .stream()
-                .collect(Collectors.toMap(Map.Entry::getKey,
-                        e -> e.getValue().get()));
+    public synchronized Map<Integer, Long> getPlayerWinStats() {
+        Map<Integer, Long> result = new HashMap<>();
+        playerWins.forEach((p, c) -> result.put(p, c.get()));
+        return result;
     }
 }
