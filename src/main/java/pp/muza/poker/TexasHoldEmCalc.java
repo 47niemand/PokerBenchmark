@@ -1,11 +1,16 @@
 package pp.muza.poker;
 
+import java.util.List;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import pp.muza.cards.Card;
 import pp.muza.cards.CardStack;
 
-import java.util.ArrayList;
-
 // Texas hold 'em calculator
+@Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class TexasHoldEmCalc implements PokerCalc {
 
     private final CardStack combination;
@@ -14,14 +19,6 @@ public final class TexasHoldEmCalc implements PokerCalc {
     private final int player;
     private final CardStack hand;
 
-    private TexasHoldEmCalc(final int player, final CardStack combination, final Result result, final int score, final CardStack hand) {
-        this.player = player;
-        this.combination = combination;
-        this.result = result;
-        this.score = score;
-        this.hand = hand;
-    }
-
     /**
      * Calculates the result for a given poker hand
      *
@@ -29,10 +26,10 @@ public final class TexasHoldEmCalc implements PokerCalc {
      * @param tag  player's ID
      * @return PokerCalc
      */
-    public static PokerCalc calculateResult(final ArrayList<? extends Card> hand, final int tag) {
+    public static PokerCalc calculateResult(final List<? extends Card> hand, final int tag) {
         Result res = Result.UNKNOWN;
         CardStack handCpy = new CardStack(hand);
-        CardStack combination = new CardStack();
+        CardStack combination = new CardStack(5);
 
         handCpy.sort(Card::compareScoreByValueDesc);
 
@@ -65,9 +62,10 @@ public final class TexasHoldEmCalc implements PokerCalc {
                         break;
                     }
                 }
-                boolean checkFlush = combination.size() > 1;
+                Card.Suit suit = combination.get(0).getSuit();
+                boolean checkFlush = true;
                 for (int j = 1; checkFlush && j < combination.size(); j++) {
-                    checkFlush = combination.get(j).getSuit() == handCpy.get(0).getSuit();
+                    checkFlush = combination.get(j).getSuit() == suit;
                 }
                 if (checkFlush) {
                     res = PokerCalc.Result.STRAIGHTFLUSH;
@@ -130,35 +128,10 @@ public final class TexasHoldEmCalc implements PokerCalc {
         }
 
         final int scoreMultiples = (Card.Value.MAX_SCORE + 1);
-        int kicker = hand.stream().sequential().limit(2).map(x -> x.getValue().getScore()).reduce(0, Integer::sum);
+        int kicker = hand.stream().limit(2).map(x -> x.getValue().getScore()).reduce(0, Integer::sum);
         int score = res.getScore() * scoreMultiples * scoreMultiples + combination.getFirst().getValue().getScore() * scoreMultiples + kicker;
 
-        return new TexasHoldEmCalc(tag, combination, res, score, new CardStack(hand));
-    }
-
-    @Override
-    public CardStack getCombination() {
-        return combination;
-    }
-
-    @Override
-    public Result getResult() {
-        return result;
-    }
-
-    @Override
-    public int getScore() {
-        return score;
-    }
-
-    @Override
-    public int getPlayer() {
-        return player;
-    }
-
-    @Override
-    public CardStack getHand() {
-        return hand;
+        return new TexasHoldEmCalc(combination, res, score, tag, new CardStack(hand));
     }
 
     @Override
@@ -166,10 +139,10 @@ public final class TexasHoldEmCalc implements PokerCalc {
         return "PokerCalc{" +
                 "player=" + getPlayer() +
                 ",result=" + getResult() +
-                (getHand() != null ? ", hand=\"" + getHand() + "\"" : "") +
+                ", hand=\"" + getHand() + "\"" +
                 ", combination=\"" + getCombination() + "\"" +
                 ", score=" + getScore() +
                 "}";
     }
-
 }
+

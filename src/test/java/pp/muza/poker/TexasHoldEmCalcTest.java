@@ -23,6 +23,14 @@ public class TexasHoldEmCalcTest {
             assertEquals(TexasHoldEmCalc.Result.STRAIGHTFLUSH, result.getResult());
             assertEquals("7H 6H 5H 4H 3H", result.getCombination().toString());
         }
+        {
+            // straight flush where highest hand card (AS) has a different suit — regression for flush-suit bug
+            CardStack cards = CardStack.parseCards("AS 2H 3H 4H 5H 6H 7H");
+            PokerCalc result = TexasHoldEmCalc.calculateResult(cards, 0);
+            System.out.println(result.toString());
+            assertEquals(TexasHoldEmCalc.Result.STRAIGHTFLUSH, result.getResult());
+            assertEquals("7H 6H 5H 4H 3H", result.getCombination().toString());
+        }
     }
 
     @Test
@@ -110,6 +118,40 @@ public class TexasHoldEmCalcTest {
             System.out.println(result.toString());
             assertEquals(TexasHoldEmCalc.Result.FLUSH, result.getResult());
             assertEquals("8H 7H 5H 4H 2H", result.getCombination().toString());
+        }
+        {
+            CardStack cards = CardStack.parseCards("2C 4H 5H 7H 8H 2H 10C");
+            PokerCalc result = TexasHoldEmCalc.calculateResult(cards, 0);
+            System.out.println(result.toString());
+            assertEquals(TexasHoldEmCalc.Result.FLUSH, result.getResult());
+            assertEquals("8H 7H 5H 4H 2H", result.getCombination().toString());
+        }
+        {
+            CardStack cards = CardStack.parseCards("2C 4D 5H 7H 8H 2H 10H");
+            PokerCalc result = TexasHoldEmCalc.calculateResult(cards, 0);
+            System.out.println(result.toString());
+            assertEquals(TexasHoldEmCalc.Result.FLUSH, result.getResult());
+            assertEquals("10H 8H 7H 5H 2H", result.getCombination().toString());
+        }
+    }
+
+    @Test
+    public void getScore() {
+        {
+            int score1 = TexasHoldEmCalc.calculateResult(CardStack.parseCards("2H 4H 5H 7H 8H 2H 10H"), 0).getScore();
+            int score2 = TexasHoldEmCalc.calculateResult(CardStack.parseCards("2C 4D 5H 7H 8H 2H 10H"), 1).getScore();
+
+            System.out.println("score1: " + score1);
+            System.out.println("score2: " + score2);
+            assertTrue(score1 == score2);
+        }
+        {
+            int score1 = TexasHoldEmCalc.calculateResult(CardStack.parseCards("2H 4H 5H 7H 8H 2H 10H"), 0).getScore();
+            int score2 = TexasHoldEmCalc.calculateResult(CardStack.parseCards("3C 4D 5H 7H 8H 2H 10H"), 1).getScore();
+
+            System.out.println("score1: " + score1);
+            System.out.println("score2: " + score2);
+            assertTrue(score2 > score1);
         }
     }
 }
