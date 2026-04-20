@@ -73,27 +73,28 @@ java -jar build/libs/PokerBenchmark-1.0.jar -g -i 2000000 -t 4 -p 7 -h AS KC JD 
 ```
 
 ```no-highlight
-2000000 iterations performed in 4861 milliseconds 
+BenchmarkConfig(players=7, threads=8, noStats=false, maxIteration=2000000, handSetup=AS KC JD, riverSetup=2C 10D AD KD)                                            
+2000000 iterations performed in 3435 milliseconds
 Results statistics:
 | % HIGHCARD | % ONEPAIR | % TWOPAIRS | % THREEOFAKIND | % STRAIGHT | % FLUSH | % FULLHOUSE | % QUADS | % STRAIGHTFLUSH |
 | ----------:| ---------:| ----------:| --------------:| ----------:| -------:| -----------:| -------:| ---------------:|
-|       0.00 |      0.00 |      28.56 |           3.79 |      12.68 |   41.59 |        9.85 |    0.07 |            3.46 |
+|       0.00 |      0.00 |      26.97 |           3.84 |      16.91 |   38.43 |        9.58 |    0.06 |            4.21 |
 Players statistics:
 River setup [2C, 10D, AD, KD]
 | Player  | Hand  | % Wins | % HIGHCARD | % ONEPAIR | % TWOPAIRS | % THREEOFAKIND | % STRAIGHT | % FLUSH | % FULLHOUSE | % QUADS | % STRAIGHTFLUSH |
 | ------- | ----- | ------:| ----------:| ---------:| ----------:| --------------:| ----------:| -------:| -----------:| -------:| ---------------:|
-| Player0 | AS KC |  36.43 |       0.00 |      0.00 |      76.68 |           0.00 |       0.00 |    0.00 |       23.32 |    0.00 |            0.00 |
-| Player1 | JD    |  34.85 |       0.00 |      0.00 |       0.00 |           1.01 |      17.79 |   71.28 |        0.00 |    0.00 |            9.93 |
-| Player2 |       |   5.75 |       0.00 |      0.00 |       2.16 |          12.01 |      22.60 |   58.28 |        4.72 |    0.22 |            0.00 |
-| Player3 |       |   5.75 |       0.00 |      0.00 |       2.23 |          12.04 |      22.53 |   58.23 |        4.75 |    0.23 |            0.00 |
-| Player4 |       |   5.71 |       0.00 |      0.00 |       2.17 |          11.92 |      22.61 |   58.30 |        4.77 |    0.24 |            0.00 |
-| Player5 |       |   5.77 |       0.00 |      0.00 |       2.18 |          12.04 |      22.51 |   58.29 |        4.75 |    0.22 |            0.00 |
-| Player6 |       |   5.74 |       0.00 |      0.00 |       2.17 |          11.85 |      22.64 |   58.46 |        4.65 |    0.23 |            0.00 |
+| Player0 | AS KC |  34.64 |       0.00 |      0.00 |      76.17 |           0.00 |       0.00 |    0.00 |       23.83 |    0.00 |            0.00 |
+| Player1 | JD    |  36.09 |       0.00 |      0.00 |       0.00 |           0.93 |      20.55 |   66.85 |        0.00 |    0.00 |           11.67 |
+| Player2 |       |   5.86 |       0.00 |      0.00 |       1.99 |          11.95 |      32.31 |   48.91 |        4.59 |    0.24 |            0.00 |
+| Player3 |       |   5.87 |       0.00 |      0.00 |       2.00 |          11.98 |      32.33 |   49.06 |        4.44 |    0.20 |            0.00 |
+| Player4 |       |   5.86 |       0.00 |      0.00 |       1.94 |          11.88 |      32.67 |   48.76 |        4.53 |    0.22 |            0.00 |
+| Player5 |       |   5.86 |       0.00 |      0.00 |       2.00 |          12.05 |      32.52 |   48.68 |        4.54 |    0.21 |            0.00 |
+| Player6 |       |   5.81 |       0.00 |      0.00 |       2.06 |          11.95 |      32.29 |   48.96 |        4.51 |    0.23 |            0.00 |
 ```
 
 Verbose output example:
 
 ```no-highlight
-ITERATION 499 [PokerCalc{player=2,result=FULLHOUSE, hand="KH JC AS AC JS JD 9D", combination="AS AC JS JD JC", score=1809}]
-ITERATION 500 [PokerCalc{player=0,result=THREEOFAKIND, hand="AD 4H AS AC KS 6H 10C", combination="AS AD AC", score=1128}]
+ITERATION 499 [PokerCalc{player=1,result=STRAIGHT, hand="JD QH 2C 10D AD KD 5C", combination="AD KD QH JD 10D", score=4505625}]
+ITERATION 500 [PokerCalc{player=0,result=TWOPAIRS, hand="AS KC 2C 10D AD KD 7H", combination="AS AD KD KC", score=3033000}]
 ```
