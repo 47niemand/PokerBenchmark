@@ -2,7 +2,6 @@ package pp.muza;
 
 import pp.muza.poker.GameStatistic;
 import pp.muza.poker.PokerCalc;
-import pp.muza.poker.TexasHoldEmCalc;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -15,20 +14,21 @@ import java.util.stream.Stream;
 public final class StatisticSimpleFormatter implements StatisticFormatter {
 
     static final double MULTIPLER = 1.0d;
-    static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
-    static {
-        DECIMAL_FORMAT.setMaximumFractionDigits(8);
-    }
+    private static final ThreadLocal<DecimalFormat> DECIMAL_FORMAT = ThreadLocal.withInitial(() -> {
+        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+        df.setMaximumFractionDigits(8);
+        return df;
+    });
 
     private static String roundOff(final double d) {
-        return DECIMAL_FORMAT.format(d);
+        return DECIMAL_FORMAT.get().format(d);
     }
 
-    private static String formatResultStatistic(final Map<TexasHoldEmCalc.Result, Long> stats, final long n) {
+    private static String formatResultStatistic(final Map<PokerCalc.Result, Long> stats, final long n) {
         final long n1 = Math.max(Math.min(1, n), stats.values().stream().reduce(0L, Long::sum));
-        return Stream.of(TexasHoldEmCalc.Result.values())
+        return Stream.of(PokerCalc.Result.values())
                 .sorted(Comparator.comparingInt(PokerCalc.Result::getScore))
-                .filter(result -> result != TexasHoldEmCalc.Result.UNKNOWN)
+                .filter(result -> result != PokerCalc.Result.UNKNOWN)
                 .map(result -> String.format("%s=%s", result.toString(), roundOff(MULTIPLER * stats.get(result) / n1)))
                 .collect(Collectors.toList())
                 .toString();

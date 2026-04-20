@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 
 public final class StatisticPrettyFormatter implements StatisticFormatter {
 
-    private static final double ONE_HANDRED_PERCENT = 100.0;
+    private static final double ONE_HUNDRED_PERCENT = 100.0;
 
     private static void printResultStatistics(final GameStatistic gameStats) {
         Table.Builder tableBuilder = new Table.Builder();
@@ -31,7 +31,7 @@ public final class StatisticPrettyFormatter implements StatisticFormatter {
         List<Object> row = Stream.of(PokerCalc.Result.values())
                 .sorted(Comparator.comparingInt(PokerCalc.Result::getScore))
                 .filter(result -> result != PokerCalc.Result.UNKNOWN)
-                .map(result -> String.format("%.2f", ONE_HANDRED_PERCENT * gameStats.getResultStats().get(result) / n))
+                .map(result -> String.format("%.2f", ONE_HUNDRED_PERCENT * gameStats.getResultStats().get(result) / n))
                 .collect(Collectors.toList());
 
         tableBuilder.addRow(new TableRow<>(row));
@@ -60,12 +60,12 @@ public final class StatisticPrettyFormatter implements StatisticFormatter {
             List<Object> row = new ArrayList<>();
             row.add(String.format("Player%d", player));
             row.add(gameStats.getPlayersHand().get(player).stream().map(Card::toString).collect(Collectors.joining(" ")));
-            row.add(String.format("%.2f", ONE_HANDRED_PERCENT * gameStats.getPlayerWinStats().get(player) / n));
+            row.add(String.format("%.2f", ONE_HUNDRED_PERCENT * gameStats.getPlayerWinStats().get(player) / n));
             final long n1 = Math.max(Math.min(1, n), gameStats.getPlayerResultWinStats().get(player).values().stream().reduce(0L, Long::sum));
             row.addAll(Stream.of(PokerCalc.Result.values())
                     .sorted(Comparator.comparingInt(PokerCalc.Result::getScore))
                     .filter(result -> result != PokerCalc.Result.UNKNOWN)
-                    .map(result -> String.format("%.2f", ONE_HANDRED_PERCENT * gameStats.getPlayerResultWinStats().get(player).get(result) / n1))
+                    .map(result -> String.format("%.2f", ONE_HUNDRED_PERCENT * gameStats.getPlayerResultWinStats().get(player).get(result) / n1))
                     .collect(Collectors.toList())
             );
             tableBuilder.addRow(new TableRow<>(row));
